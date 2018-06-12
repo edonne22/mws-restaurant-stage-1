@@ -1,0 +1,54 @@
+@media screen and (min-width:50px) and (max-width: 700px){
+
+	/*for testing only*/
+	nav h1{
+		background-color:blue;
+	}
+
+	#map {
+  		height: 300px;
+  		width: 100%;
+	}	
+
+	#restaurants-list li {
+		width: 80%;
+	}
+
+}
+
+@media screen and (min-width:701px) and (max-width: 1100px){
+
+	/*for testing only*/
+	nav h1{
+		background-color:green;
+	}
+
+	#map {
+  		height: 200px;
+  		width: 100%;
+	}	
+
+	#restaurants-list li {
+		width: calc((90% - 150px) /2);
+	}
+
+}
+
+
+@media screen and (min-width: 1101px){
+	
+	/*for testing only*/
+	nav h1{
+		background-color:purple;
+	}
+
+	#map {
+  		height: 200px;
+  		width: 100%;
+	}
+
+	#restaurants-list li {
+		width:calc((100% - 320px) / 3);
+	}
+
+}
