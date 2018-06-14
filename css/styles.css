@@ -61,10 +61,10 @@ nav {
   background-color: #252831;
   text-align:center;
 }
-nav h1 {
+nav h2 {
   margin: auto;
 }
-nav h1 a {
+nav h2 a {
   color: #fff;
   font-size: 1.4em;
   line-height:80px;
