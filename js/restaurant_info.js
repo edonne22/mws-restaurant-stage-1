@@ -88,9 +88,9 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.srcset = DBHelper.imageUrlStringForRestaurant(restaurant);
-  image.alt = DBHelper.imageDescriptionForRestaurant(restaurant);
+  image.src = '/img/' + restaurant.id + '_1x.jpg';
+  image.srcset = '/img/' + restaurant.id + '_1x.jpg 1x, /img/' + restaurant.id + '_2x.jpg 2x';
+  image.alt = descriptions[(restaurant.id - 1)];
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -197,3 +197,18 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+var descriptions = [
+
+	"Cozy restaurant with brick exterior, and many people inside.",
+	"A slightly burned, authentic looking pizza with melted slices of mozzarella.",
+	"A metallic kitchen-like restaurant space with wooden tables topped with burners for heating food.",
+	"The outside of a diner restaurant with a neon sign and lights at night.",
+	"A casual pizza counter with crowded seating area. Christmas lights decorate the side wall.",
+	"A large, sparse room with an industrial ceiling and an American flag on the back wall. People sit in casual groups on folding chairs.",
+	"A stylized black and white photo of a storefront with a spray-painted sign. Two men in grunge attire converse outside; one is leading a dog.",
+	"The exterior of a clean, gray brick building with a classic blue sign and an awning, contrasted against a red building behind it and a tree to the right of the building.",
+	"A black and white photo of young people who are mostly Asian eating at narrow tables that are arranged close together.",
+	"A stark white space with round stools along a silver counter. A barrel holds bare tree branches, and behind the counter is a selection of multicolored bottles.",
+	
+]
