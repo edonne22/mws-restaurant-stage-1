@@ -48,6 +48,7 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', (event) => {
+  var offlinePage = "/index.html";
   if (event.request.method === 'GET') {
     event.respondWith(
       caches.match(event.request)
