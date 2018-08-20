@@ -1,4 +1,5 @@
 let restaurant;
+let reviews;
 var newMap;
 
 /**
@@ -34,22 +35,7 @@ initMap = () => {
     }
   });
 }  
- 
-/* window.initMap = () => {
-  fetchRestaurantFromURL((error, restaurant) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {
-      self.map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 16,
-        center: restaurant.latlng,
-        scrollwheel: false
-      });
-      fillBreadcrumb();
-      DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-    }
-  });
-} */
+
 
 /**
  * Get current restaurant from page URL.
@@ -72,6 +58,31 @@ fetchRestaurantFromURL = (callback) => {
       }
       fillRestaurantHTML();
       callback(null, restaurant)
+    });
+  }
+}
+
+/**
+ * Get current reviews from page URL.
+ */
+fetchReviewsFromURL = (callback) => {
+  if (self.reviews) { // reviews already fetched!
+    callback(null, self.reviews)
+    return;
+  }
+  const id = getParameterByName('id');
+  if (!id) { // no id found in URL
+    error = 'No restaurant review id in URL'
+    callback(error, null);
+  } else {
+    DBHelper.fetchReviewsById(id, (error, reviews) => {
+      self.reviews = reviews;
+      if (!reviews) {
+        console.error(error);
+        return;
+      }
+      fillReviewsHTML();
+      callback(null, reviews)
     });
   }
 }
@@ -126,7 +137,7 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
+fillReviewsHTML = (reviews = self.reviews) => {
   const container = document.getElementById('reviews-container');
   const title = document.createElement('h3');
   title.innerHTML = 'Reviews';
@@ -138,11 +149,15 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     container.appendChild(noReviews);
     return;
   }
-  const ul = document.getElementById('reviews-list');
+  
+  console.log('reviews: ' + reviews);
+  
+  /*const ul = document.getElementById('reviews-list');
+  
   reviews.forEach(review => {
     ul.appendChild(createReviewHTML(review));
   });
-  container.appendChild(ul);
+  container.appendChild(ul);*/
 }
 
 /**
@@ -176,8 +191,14 @@ fillBreadcrumb = (restaurant=self.restaurant) => {
   const breadcrumb = document.getElementById('breadcrumb');
   const li = document.createElement('li');
   const a = document.createElement('a');
+  const favorite = document.createElement('button');
+  favorite.innerHTML = "+ Favorite";
+  favorite.setAttribute("class", "faveButton2");
+  favorite.setAttribute("id", "favorite_" + restaurant.id);
+  favorite.onclick = function(){faved(this.id);};
   breadcrumb.appendChild(li);
   li.appendChild(a);
+  li.appendChild(favorite);
   a.innerHTML = restaurant.name;
   a.setAttribute("aria-current","page");
 }
@@ -196,6 +217,20 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+function faved(thisid){
+	//console.log('fave clicked');
+	var f = document.getElementById(thisid);
+	if(f.classList.contains("faved")){
+		f.classList.remove("faved");
+		f.innerHTML = "+ Favorite";
+		f.style.backgroundColor = "#004d00";
+	} else{
+		f.className += " faved";
+		f.innerHTML = "Favorited";
+		f.style.backgroundColor = "#004d99";
+	}
 }
 
 var descriptions = [

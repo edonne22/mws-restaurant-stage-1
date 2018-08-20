@@ -16,9 +16,11 @@ static openDatabase() {
     
     var db;
     var store;
+    var store2;
     var dbPromise = idb.open('restrev', 1, function(upgradeDb){
     	store = upgradeDb.createObjectStore('restaurants', { keyPath: 'id' });
-    	//store.createIndex('by-id', 'id');
+    	store2 = upgradeDb.createObjectStore('reviews', { keyPath: 'id' });
+    	store2.createIndex('restaurant', 'restaurant_id');
     });
 	
 };
@@ -69,6 +71,69 @@ static openDatabase() {
 	})
     
   };
+  
+  //get reviews in separate database
+  static fetchReviews(callback, id) {
+  
+  	let fetchURL = 'http://localhost:1337/reviews/';
+  	//reviews from IndexedDB
+  	var db;
+    var store2;
+    var dbPromise = idb.open('restrev', 1);
+  	dbPromise.then(function(db) {    	
+  		var tx = db.transaction('reviews', 'readonly');
+  		var store2 = tx.objectStore('reviews');
+  		return store2.getAll();
+	}).then(function(reviews) {
+  		if (reviews.length !== 0){
+  			callback(null, reviews);
+  		} else {
+  		
+  			//if not available from indexedDB, fetch from server
+  			fetch(fetchURL, { method: 'GET'})
+    
+    		.then(function(response){
+    			return response.json();
+			})
+			.then(function(reviews){
+				//after fetch, add to IndexedDB
+				dbPromise.then(function(db){
+					var tx = db.transaction("reviews", "readwrite");
+					var rest = tx.objectStore("reviews");
+					for (var rest_data of reviews){
+						rest.put(rest_data);
+					}
+					callback(null, reviews);
+					return tx.complete
+				}).then(function() {
+					console.log("success: reviews added from server");
+				}).catch(function(error) {
+					console.log(error);
+					console.log("failed to add review data from server");
+				})
+			})
+  		}
+	})
+    
+  };
+  //end reviews section
+  
+  /*fetch reviews by restaurant ID*/
+  static fetchReviewsById(id, callback) {
+  	// fetch all restaurants with proper error handling.
+    DBHelper.fetchReviews((error, reviews) => {
+      if (error) {
+        callback(error, null);
+      } else {
+        const review = reviews.find(r => r.id == id);
+        if (review) { // Got the restaurant
+          callback(null, review);
+        } else { // Review does not exist in the database
+          callback('Review does not exist', null);
+        }
+      }
+    });
+  }
 
   /**
    * Fetch a restaurant by its ID.

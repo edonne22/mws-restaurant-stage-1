@@ -61,6 +61,17 @@
     <!-- Beginning reviews -->
     <section id="reviews-container">
       <ul id="reviews-list"></ul>
+      <h3>Leave a Review</h3>
+      <form id="reviewform" action="http://localhost:1337/reviews/" method="post">
+      	Name:<br>
+      	<input type="text" name="name" class="inputbox">
+      	<br>
+      	Rating (1-5):<br>
+      	<input type="text" name="rating" class="inputbox"><br>
+      	Comments:<br>
+      	<input type="textarea" name="comments" class="inputbox" style="vertical-align: top; height:100px"><br>
+      	<input type="submit" id="submitform" value="Submit">
+      </form>
     </section>
     <!-- End reviews -->
     

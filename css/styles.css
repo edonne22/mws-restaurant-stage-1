@@ -206,8 +206,53 @@ nav h2 a {
   text-align: left;
   text-transform: uppercase;
 }
+#reviewform{
+	min-width:400px;
+	font-size: 14pt;
+	margin-bottom:20px;
+}
+#submitform{
+	background-color:#003366;
+	color:white;
+	border-radius:5px;
+	padding:5px;
+	padding-left:15px; 
+	padding-right:15px;
+	font-size:14pt;
+	cursor:pointer;
+}
+.inputbox{
+	margin-bottom:5px;
+	margin-bottom: 10px;
+	height:30px;
+	width:300px;
+	font-size:14px;
+}
 
 /* ====================== Restaurant Details ====================== */
+.faveButton{
+	background-color: #004d00;
+	color:white;
+	border-radius: 5px;
+	padding:5px;
+	padding-left:12px; 
+	padding-right:15px;
+	font-size:14pt;
+	cursor:pointer;
+	margin-top:5px;
+}
+.faveButton2{
+	background-color: #004d00;
+	color:white;
+	border-radius: 5px;
+	padding:5px;
+	padding-left:12px; 
+	padding-right:15px;
+	font-size:14pt;
+	cursor:pointer;
+	margin-left:15px;
+}
+
 .inside{
 	background-color: #f3f3f3;
 }

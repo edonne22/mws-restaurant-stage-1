@@ -13,7 +13,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initMap(); // added 
   fetchNeighborhoods();
   fetchCuisines();
+  fetchReviews();
 });
+
+/**
+ * Fetch all reviews.
+ */
+ 
+fetchReviews = () => {
+  DBHelper.fetchReviews((error, reviews) => {
+    if (error) { // Got an error
+      console.error(error);
+    } else {
+      self.reviews = reviews;
+      console.log("reviews added");
+      //fillReviewsHTML();
+    }
+  });
+}
 
 /**
  * Fetch all neighborhoods and set their HTML.
@@ -177,7 +194,14 @@ createRestaurantHTML = (restaurant) => {
   const address = document.createElement('p');
   address.innerHTML = restaurant.address;
   li.append(address);
-
+  
+  const favorite = document.createElement('button');
+  favorite.innerHTML = "+ Favorite";
+  favorite.setAttribute("class", "faveButton");
+  favorite.setAttribute("id", "favorite_" + restaurant.id);
+  favorite.setAttribute("aria-label", "add favorite");
+  li.append(favorite);
+  favorite.onclick = function(){faved(this.id);};
   
   /*
   const more = document.createElement('a');
@@ -185,7 +209,7 @@ createRestaurantHTML = (restaurant) => {
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)*/
 
-  return li
+  return li;
 }
 
 /**
@@ -211,6 +235,22 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     self.markers.push(marker);
   });
 } */
+
+function faved(thisid){
+	//console.log('fave clicked');
+	var f = document.getElementById(thisid);
+	if(f.classList.contains("faved")){
+		f.classList.remove("faved");
+		f.innerHTML = "+ Favorite";
+		f.style.backgroundColor = "#004d00";
+		f.setAttribute("aria-label", "add favorite");
+	} else{
+		f.className += " faved";
+		f.innerHTML = "Favorited";
+		f.style.backgroundColor = "#004d99";
+		f.setAttribute("aria-label", "undo favorite");
+	}
+}
 
 var descriptions = [
 
