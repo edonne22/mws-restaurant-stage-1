@@ -7,6 +7,8 @@ var newMap;
  */
 document.addEventListener('DOMContentLoaded', (event) => {  
   initMap();
+  fetchReviews();
+  //DBHelper.deleteReview('http://localhost:1337/reviews/56');
 });
 
 /**
@@ -36,7 +38,6 @@ initMap = () => {
   });
 }  
 
-
 /**
  * Get current restaurant from page URL.
  */
@@ -62,29 +63,16 @@ fetchRestaurantFromURL = (callback) => {
   }
 }
 
-/**
- * Get current reviews from page URL.
- */
-fetchReviewsFromURL = (callback) => {
-  if (self.reviews) { // reviews already fetched!
-    callback(null, self.reviews)
-    return;
-  }
-  const id = getParameterByName('id');
-  if (!id) { // no id found in URL
-    error = 'No restaurant review id in URL'
-    callback(error, null);
-  } else {
-    DBHelper.fetchReviewsById(id, (error, reviews) => {
+fetchReviews = (id = getParameterByName('id')) => {
+  DBHelper.fetchReviews((error, reviews) => {
+    if (error) { // Got an error
+      console.error(error);
+    } else {
       self.reviews = reviews;
-      if (!reviews) {
-        console.error(error);
-        return;
-      }
+      console.log("reviews added");
       fillReviewsHTML();
-      callback(null, reviews)
-    });
-  }
+    }
+  }, id);
 }
 
 /**
@@ -111,7 +99,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
   // fill reviews
-  fillReviewsHTML();
+  //fillReviewsHTML();
 }
 
 /**
@@ -138,6 +126,28 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
  * Create all reviews HTML and add them to the webpage.
  */
 fillReviewsHTML = (reviews = self.reviews) => {
+
+/*getting right reviews*/
+  
+  var idReviews = [];
+	function getIdReviews(){
+		var abc = new Array();
+		//console.log('reviews length: ' + reviews.length);
+		for(i = 0; i < reviews.length; i++){
+			var restId = reviews[i].restaurant_id;
+			restId = parseInt(restId);
+			var reviewArr = reviews[i];
+
+			if(restId == currentId){
+				abc.push(reviewArr);
+				//console.log('reviews array: ' + abc);
+			}
+		}
+		idReviews = abc;
+		//console.log('New array: ' + idReviews);
+	}
+
+
   const container = document.getElementById('reviews-container');
   const title = document.createElement('h3');
   title.innerHTML = 'Reviews';
@@ -145,19 +155,73 @@ fillReviewsHTML = (reviews = self.reviews) => {
 
   if (!reviews) {
     const noReviews = document.createElement('p');
+    noReviews.setAttribute('id','no-review');
     noReviews.innerHTML = 'No reviews yet!';
     container.appendChild(noReviews);
     return;
   }
   
-  console.log('reviews: ' + reviews);
+  //console.log('reviews: ' + reviews);
   
-  /*const ul = document.getElementById('reviews-list');
+  const ul = document.getElementById('reviews-list');
   
-  reviews.forEach(review => {
+  //console.log('filling reviews: ' + reviews[0].restaurant_id);
+  var currentId = getParameterByName('id');
+  currentId = parseInt(currentId);
+  //console.log('current id outside: ' + currentId);
+  getIdReviews();
+  
+  idReviews.forEach(review => {
     ul.appendChild(createReviewHTML(review));
   });
-  container.appendChild(ul);*/
+  container.appendChild(ul);
+
+}
+
+
+//add review function, calls on DBHelper add review
+addNewReview = () => {
+	event.preventDefault();
+	//get data from form
+	var restaurantId = getParameterByName('id');
+	var name = document.getElementById('reviewer-name').value;
+	var rating;
+	var comments = document.getElementById('review-comments').value;
+	var date = new Date();
+	var dateTime = date.getTime();
+	date = new Date(dateTime);
+	var options = {
+		year: 'numeric', month: 'numeric', day: 'numeric',
+	};
+	date = date.toLocaleDateString('en', options);
+	rating = document.querySelector('#rating_select option:checked').value;
+	const review = [name, rating, comments, restaurantId, date];
+	
+	//convert and add data to DOM
+	const parseReview = {
+		restaurant_id: parseInt(review[3]),
+		rating: parseInt(review[1]),
+		name: review[0],
+		comments: review[2].substring(0,300),
+		createdAt: review[4]
+	};
+	
+	//add review to server
+	DBHelper.addReview(parseReview);
+	addReviewHTML(parseReview);
+	document.getElementById('reviewform').reset();
+}
+
+addReviewHTML = (review) => {
+	console.log('run add review html');
+	if(document.getElementById('no-review')){
+		document.getElementById('no-review').remove();
+	}
+	const container = document.getElementById('reviews-container');
+	const ul = document.getElementById('reviews-list');
+	
+    ul.appendChild(createReviewHTML(review));
+  	container.appendChild(ul);
 }
 
 /**
@@ -170,7 +234,13 @@ createReviewHTML = (review) => {
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+  var datetime = review.createdAt;
+  var readDate = new Date(datetime);
+  var options = {
+  	year: 'numeric', month: 'numeric', day: 'numeric',
+  };
+  readDate = readDate.toLocaleDateString('en', options);
+  date.innerHTML = readDate;
   li.appendChild(date);
 
   const rating = document.createElement('p');
@@ -192,9 +262,19 @@ fillBreadcrumb = (restaurant=self.restaurant) => {
   const li = document.createElement('li');
   const a = document.createElement('a');
   const favorite = document.createElement('button');
-  favorite.innerHTML = "+ Favorite";
   favorite.setAttribute("class", "faveButton2");
   favorite.setAttribute("id", "favorite_" + restaurant.id);
+  if(restaurant.is_favorite == "false"){
+  	favorite.classList.remove("faved");
+  	favorite.innerHTML = "+ Favorite";
+  	favorite.style.backgroundColor = "#004d00";
+  	favorite.setAttribute("aria-label", "add favorite");
+  } else {
+  	favorite.className += " faved";
+  	favorite.innerHTML = "Favorited";
+  	favorite.style.backgroundColor = "#004d99";
+  	favorite.setAttribute("aria-label", "add favorite");
+  }
   favorite.onclick = function(){faved(this.id);};
   breadcrumb.appendChild(li);
   li.appendChild(a);
@@ -222,14 +302,21 @@ getParameterByName = (name, url) => {
 function faved(thisid){
 	//console.log('fave clicked');
 	var f = document.getElementById(thisid);
+	var currentId = thisid;
+	currentId = currentId.split("_").pop();
+	currentId = parseInt(currentId);
 	if(f.classList.contains("faved")){
 		f.classList.remove("faved");
 		f.innerHTML = "+ Favorite";
 		f.style.backgroundColor = "#004d00";
+		f.setAttribute("aria-label", "add favorite");
+		DBHelper.updateFavoriteStatus(currentId, 'false');
 	} else{
 		f.className += " faved";
 		f.innerHTML = "Favorited";
 		f.style.backgroundColor = "#004d99";
+		f.setAttribute("aria-label", "undo favorite");
+		DBHelper.updateFavoriteStatus(currentId, 'true');
 	}
 }
 

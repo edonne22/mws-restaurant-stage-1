@@ -12,19 +12,19 @@ class DBHelper {
     return 'http://localhost:1337/restaurants';
   }
   
-static openDatabase() {
+  static openDatabase() {
     
     var db;
     var store;
     var store2;
-    var dbPromise = idb.open('restrev', 1, function(upgradeDb){
+    return idb.open('restrev', 1, function(upgradeDb){
     	store = upgradeDb.createObjectStore('restaurants', { keyPath: 'id' });
     	store2 = upgradeDb.createObjectStore('reviews', { keyPath: 'id' });
     	store2.createIndex('restaurant', 'restaurant_id');
     });
 	
-};
-
+	};
+	
   /**
    * Fetch all restaurants.
    */
@@ -75,13 +75,16 @@ static openDatabase() {
   //get reviews in separate database
   static fetchReviews(callback, id) {
   
+  	//console.log('id from function: ' + id);
+  	var id = id; //until can get real id in there
+  	//let fetchURL = 'http://localhost:1337/reviews/?restaurant_id=' + id;
   	let fetchURL = 'http://localhost:1337/reviews/';
   	//reviews from IndexedDB
   	var db;
     var store2;
     var dbPromise = idb.open('restrev', 1);
   	dbPromise.then(function(db) {    	
-  		var tx = db.transaction('reviews', 'readonly');
+  		var tx = db.transaction('reviews', 'readwrite');
   		var store2 = tx.objectStore('reviews');
   		return store2.getAll();
 	}).then(function(reviews) {
@@ -104,6 +107,7 @@ static openDatabase() {
 						rest.put(rest_data);
 					}
 					callback(null, reviews);
+					//console.log('reviews: ' + reviews);
 					return tx.complete
 				}).then(function() {
 					console.log("success: reviews added from server");
@@ -116,23 +120,122 @@ static openDatabase() {
 	})
     
   };
-  //end reviews section
+/*
+	//fetch reviews by restaurant id
+	static fetchReviewsById(id) {
   
-  /*fetch reviews by restaurant ID*/
-  static fetchReviewsById(id, callback) {
-  	// fetch all restaurants with proper error handling.
-    DBHelper.fetchReviews((error, reviews) => {
-      if (error) {
-        callback(error, null);
-      } else {
-        const review = reviews.find(r => r.id == id);
-        if (review) { // Got the restaurant
-          callback(null, review);
-        } else { // Review does not exist in the database
-          callback('Review does not exist', null);
-        }
-      }
-    });
+  	let fetchURL = 'http://localhost:1337/reviews/?restaurant_id=' + id;
+  	//reviews from IndexedDB
+  	var db;
+    var store2;
+    var dbPromise = idb.open('restrev', 1);
+  	dbPromise.then(function(db) {    	
+  		var tx = db.transaction('reviews', 'readonly');
+  		var store2 = tx.objectStore('reviews');
+  		return store2.getAll();
+	}).then(function(reviews) {
+  		if (reviews.length !== 0){
+  			console.log('reviews by id empty');
+  			//callback(null, reviews);
+  		} else {
+  		
+  			//if not available from indexedDB, fetch from server
+  			fetch(fetchURL, { method: 'GET'})
+    
+    		.then(function(response){
+    			return response.json();
+			})
+			.then(function(reviews){
+				//after fetch, add to IndexedDB
+				dbPromise.then(function(db){
+					var tx = db.transaction("reviews", "readwrite");
+					var reviews = tx.objectStore("reviews");
+					reviews.forEach(function(review){
+						store2.put(review);
+					});
+					return tx.complete
+				}).then(function() {
+					console.log("success: reviews added from server");
+				}).catch(function(error) {
+					console.log(error);
+					console.log("failed to add review data from server");
+				})
+			})
+  		}
+	})
+    
+  };
+*/ 
+ 
+  //add review - offline storage
+  static addReview(review) {
+  	//data from form
+  	var store_offline = {
+  		name: 'addReview',
+  		data: review,
+  		object_type: 'review'
+  	};
+  	//check online/offline status
+  	if (!navigator.onLine && (store_offline.name === 'addReview')){
+  		DBHelper.sendDataWhenOnline(store_offline);
+  		return;
+  	}
+  	var sendReview = {
+  		"name": review.name,
+  		"rating": parseInt(review.rating),
+  		"comments": review.comments,
+  		"restaurant_id": parseInt(review.restaurant_id)
+  	};
+  	console.log('Send review: ', sendReview);
+  	var fetch_options = {
+  		method: 'POST',
+  		body: JSON.stringify(sendReview),
+  		headers: new Headers({
+  			'Content-Type': 'application/json'
+  		})
+  	};
+  	
+  	fetch('http://localhost:1337/reviews', fetch_options).then((response) => {
+  		const contentType = response.headers.get('content-type');
+  		if (contentType && contentType.indexOf('application/json') !== -1){
+  			return response.json();
+  		} 
+  		else {return 'API call successful'}})
+  		.then((data) => {console.log('Fetch successful')
+  			this.openDatabase()
+  				.then(db => {
+					const tx = db.transaction('reviews', 'readwrite');
+					const store = tx.objectStore('reviews');
+					store.put(data);
+				})
+  		})
+  		.catch(error => console.log('error: ', error));
+  }
+  
+  static sendDataWhenOnline(store_offline) {
+  	console.log('Offline stored data', store_offline);
+  	//store the review object in local storage
+  	localStorage.setItem('data', JSON.stringify(store_offline.data));
+  	//add an event listener to wait in background until user is online
+  	console.log('local storage: ' + store_offline.object_type + 'stored');
+  	//when online get the reviews from local storage
+  	window.addEventListener('online', (event) => {
+  		console.log('Browser: is online');
+  		var data = JSON.parse(localStorage.getItem('data'));
+  		if (data !== null) {
+  			console.log(data);
+  			if (store_offline.name === 'addReview'){
+  				//send the review tot eh server with addReview
+  				DBHelper.addReview(store_offline.data);
+  			}
+  			
+  			console.log('local data sent to api');
+  			
+  			//remove object from local storage
+  			localStorage.removeItem('data');
+  			console.log('local storage: ${store_offline.object_type} removed');
+  		}
+  	});
   }
 
   /**
@@ -280,16 +383,44 @@ static openDatabase() {
       marker.addTo(newMap);
     return marker;
   } 
-  /* static mapMarkerForRestaurant(restaurant, map) {
-    const marker = new google.maps.Marker({
-      position: restaurant.latlng,
-      title: restaurant.name,
-      url: DBHelper.urlForRestaurant(restaurant),
-      map: map,
-      animation: google.maps.Animation.DROP}
-    );
-    return marker;
-  } */
+	
+	//changing status of favorite/unfavorite for restaurant
+	static updateFavoriteStatus(restaurantId, isFavorite){
+		//console.log('changing status to: ', isFavorite);
+		
+		var fetchURL = 'http://localhost:1337/restaurants/' + restaurantId + '/?is_favorite=' + isFavorite;
+		
+		fetch(fetchURL, {
+				method: 'PUT'
+			})
+			.then(() => {
+				//console.log('changed fav status');
+				this.openDatabase()
+					.then(db => {
+						const tx = db.transaction('restaurants', 'readwrite');
+						const store = tx.objectStore('restaurants');
+						//console.log('restaurantId: ' + restaurantId);
+						store.get(restaurantId)
+							.then(restaurant => {
+								restaurant.is_favorite = isFavorite;
+								store.put(restaurant);
+							});
+					})
+			})
+	}
+	
+	
+	/*delete reviews*/
+	static deleteReview(url) {
+  		return fetch(url, {
+    		method: 'DELETE'
+  		}).then(response =>
+    	response.json().then(json => {
+    		console.log('delete a review');
+      		return json;
+    	})
+  		);
+	}
 
 }
 

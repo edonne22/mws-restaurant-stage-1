@@ -62,15 +62,25 @@
     <section id="reviews-container">
       <ul id="reviews-list"></ul>
       <h3>Leave a Review</h3>
-      <form id="reviewform" action="http://localhost:1337/reviews/" method="post">
-      	Name:<br>
-      	<input type="text" name="name" class="inputbox">
+      <!-- <form id="reviewform" action="http://localhost:1337/reviews/" method="post"> -->
+      <form id="reviewform">
+      	<label for="reviewer-name">Name:</label><br>
+      	<input id="reviewer-name" type="text" name="name" class="inputbox">
       	<br>
       	Rating (1-5):<br>
-      	<input type="text" name="rating" class="inputbox"><br>
-      	Comments:<br>
-      	<input type="textarea" name="comments" class="inputbox" style="vertical-align: top; height:100px"><br>
-      	<input type="submit" id="submitform" value="Submit">
+      	<!--<input type="text" name="rating" class="inputbox"><br>-->
+      	<select aria-label="select rating" id="rating_select" name="rating">
+      		<option value="1">1</option>
+      		<option value="2">2</option>
+      		<option value="3">3</option>
+      		<option value="4">4</option>
+      		<option value="5">5</option>
+      	</select>
+      	</br></br>
+      	<label for="review-comments">Comments:</label><br>
+      	<input id="review-comments" type="textarea" name="comments" class="inputbox" style="vertical-align: top; height:100px"><br>
+
+      	<button id="submitform" aria-label="submit form" onclick="addNewReview()">Submit Review</button>
       </form>
     </section>
     <!-- End reviews -->
